@@ -1,0 +1,8 @@
+name = "bookmark-site"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "public"
+
+[[d1_databases]]
+binding = "bookmark_db"
+database_name = "bookmark_db"
+database_id = "ef3e2485-f7c5-4660-85d6-a00f54dbe757"

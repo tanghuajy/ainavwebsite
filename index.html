@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIToolBox 工作导航 - 你的AI工具箱，工作一键开挂</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .tool-card {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        .category-pill {
+            border-radius: 9999px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .category-pill.active {
+            background-color: #4f46e5;
+            color: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-gray-900 mb-4 gradient-text">AIToolBox 工作导航</h1>
+            <p class="text-xl text-gray-600">你的AI工具箱，工作一键开挂</p>
+            <div class="mt-4">
+                <div id="userInfo" class="hidden">
+                    <span class="text-gray-600">欢迎, </span>
+                    <span id="userEmail" class="font-medium"></span>
+                    <button onclick="handleLogout()" class="ml-2 text-red-500 hover:text-red-700">退出</button>
+                </div>
+                <div id="loginForm" class="flex justify-center gap-4">
+                    <input type="email" id="email" placeholder="邮箱" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="password" id="password" placeholder="密码" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="handleLogin()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">登录</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Toolbar -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex flex-wrap gap-4 items-center justify-between">
+                <div class="flex-1 relative">
+                    <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="搜索AI工具..."
+                        class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg"
+                    >
+                </div>
+                <div class="flex gap-3">
+                    <button
+                        id="addCategoryBtn"
+                        class="hidden flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors shadow-md"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        添加分类
+                    </button>
+                    <button
+                        id="bulkAddBtn"
+                        class="hidden flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-md"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        批量添加
+                    </button>
+                    <button
+                        id="editModeBtn"
+                        class="hidden flex items-center gap-2 px-6 py-3 bg-gray-800 text-white rounded-xl hover:bg-gray-700 transition-colors shadow-md"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        编辑模式
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold mb-4">热门分类</h2>
+            <div id="categories" class="flex flex-wrap gap-3 mb-4">
+                <button
+                    data-category="all"
+                    class="category-pill active bg-indigo-600 text-white"
+                >
+                    全部
+                </button>
+                <button
+                    data-category="image"
+                    class="category-pill bg-gray-200 hover:bg-gray-300"
+                >
+                    图像
+                </button>
+                <button
+                    data-category="video"
+                    class="category-pill bg-gray-200 hover:bg-gray-300"
+                >
+                    视频
+                </button>
+                <button
+                    data-category="productivity"
+                    class="category-pill bg-gray-200 hover:bg-gray-300"
+                >
+                    生产力
+                </button>
+                <button
+                    data-category="writing"
+                    class="category-pill bg-gray-200 hover:bg-gray-300"
+                >
+                    文本和写作
+                </button>
+                <button
+                    data-category="business"
+                    class="category-pill bg-gray-200 hover:bg-gray-300"
+                >
+                    企业
+                </button>
+                <button
+                    data-category="chatbot"
+                    class="category-pill bg-gray-200 hover:bg-gray-300"
+                >
+                    聊天机器人
+                </button>
+            </div>
+        </div>
+
+        <!-- Featured AI Tools Section -->
+        <section class="mb-16">
+            <h2 class="text-2xl font-bold mb-6">AIToolBox 精选工具</h2>
+            <div id="featuredTools" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Tools will be loaded dynamically -->
+            </div>
+        </section>
+
+        <!-- Links Grid -->
+        <div id="linksGrid" class="grid gap-8"></div>
+
+        <!-- 最新 AI 工具部分 -->
+        <section class="mb-16">
+            <h2 class="text-2xl font-bold mb-6">AIToolBox 最新工具</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="tool-card bg-white overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="https://claude.ai/favicon.ico" alt="Claude AI" class="w-10 h-10 rounded-lg" 
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%23666666%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%222%22 d=%22M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2a2 2 0 104 0a2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064%22 /%3E%3C/svg%3E';">
+                            <h3 class="text-lg font-semibold">Claude AI</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">强大的对话式AI助手，可以处理复杂问题和长篇内容</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">9.1K 访问</span>
+                            <a href="https://claude.ai" target="_blank" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">访问</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tool-card bg-white overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="https://www.perplexity.ai/favicon.ico" alt="Perplexity AI" class="w-10 h-10 rounded-lg" 
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%23666666%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%222%22 d=%22M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2a2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2a2 2 0 104 0a2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064%22 /%3E%3C/svg%3E';">
+                            <h3 class="text-lg font-semibold">Perplexity AI</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">AI驱动的搜索引擎，提供有来源的详细答案</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">6.2K 访问</span>
+                            <a href="https://www.perplexity.ai" target="_blank" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">访问</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tool-card bg-white overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="https://www.suno.ai/favicon.ico" alt="Suno AI" class="w-10 h-10 rounded-lg" 
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%23666666%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%222%22 d=%22M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2a2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2a2 2 0 104 0a2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064%22 /%3E%3C/svg%3E';">
+                            <h3 class="text-lg font-semibold">Suno AI</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">AI音乐生成工具，可创作完整歌曲，含人声和乐器</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">5.7K 访问</span>
+                            <a href="https://www.suno.ai" target="_blank" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">访问</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-8">
+                <a href="#" class="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                    获取更多AI工具
+                </a>
+            </div>
+        </section>
+        
+        <!-- FAQ 部分 -->
+        <section class="mb-16 bg-white rounded-xl p-8 shadow-md">
+            <h2 class="text-2xl font-bold mb-6">关于 AIToolBox 工作导航的常见问题</h2>
+            
+            <div class="space-y-4">
+                <div class="border-b border-gray-200 pb-4">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleFAQ(1)">
+                        <h3 class="text-lg font-medium">什么是AIToolBox 工作导航？</h3>
+                        <button id="faq-btn-1" class="w-6 h-6 flex items-center justify-center bg-gray-200 rounded-full">+</button>
+                    </div>
+                    <div id="faq-content-1" class="mt-2 text-gray-600 hidden">
+                        <p>AIToolBox 工作导航是一个精心策划的AI工具目录，旨在帮助用户发现和探索最新、最实用的人工智能工具。我们的平台汇集了各种类别的AI工具，包括图像生成、文本写作、视频创作、聊天机器人等多个领域。</p>
+                    </div>
+                </div>
+                
+                <div class="border-b border-gray-200 pb-4">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleFAQ(2)">
+                        <h3 class="text-lg font-medium">如何在AIToolBox中找到AI工具？</h3>
+                        <button id="faq-btn-2" class="w-6 h-6 flex items-center justify-center bg-gray-200 rounded-full">+</button>
+                    </div>
+                    <div id="faq-content-2" class="mt-2 text-gray-600 hidden">
+                        <p>您可以通过以下几种方式在AIToolBox中找到AI工具：使用搜索栏输入关键词、按类别浏览、查看我们的精选推荐或最新添加的工具。我们的平台设计简洁直观，让您能够轻松找到适合您需求的AI工具。</p>
+                    </div>
+                </div>
+                
+                <div class="border-b border-gray-200 pb-4">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleFAQ(3)">
+                        <h3 class="text-lg font-medium">AIToolBox的主要功能是什么？</h3>
+                        <button id="faq-btn-3" class="w-6 h-6 flex items-center justify-center bg-gray-200 rounded-full">+</button>
+                    </div>
+                    <div id="faq-content-3" class="mt-2 text-gray-600 hidden">
+                        <p>AIToolBox的主要功能包括：全面的AI工具目录、按类别分类的工具浏览、详细的工具描述和信息、精选推荐工具展示、最新AI工具更新、用户评价和反馈系统、AI相关资讯和教程。我们致力于为用户提供一站式的AI工具发现平台。</p>
+                    </div>
+                </div>
+                
+                <div class="border-b border-gray-200 pb-4">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleFAQ(4)">
+                        <h3 class="text-lg font-medium">提交AI工具到AIToolBox是免费的吗？</h3>
+                        <button id="faq-btn-4" class="w-6 h-6 flex items-center justify-center bg-gray-200 rounded-full">+</button>
+                    </div>
+                    <div id="faq-content-4" class="mt-2 text-gray-600 hidden">
+                        <p>是的，提交AI工具到AIToolBox是完全免费的。我们欢迎开发者和创作者分享他们的AI工具，以便更多用户能够发现和使用这些创新产品。提交过程简单直观，只需填写一个表单并提供基本信息即可。</p>
+                    </div>
+                </div>
+                
+                <div class="border-b border-gray-200 pb-4">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleFAQ(5)">
+                        <h3 class="text-lg font-medium">AIToolBox支持哪些类别的AI工具？</h3>
+                        <button id="faq-btn-5" class="w-6 h-6 flex items-center justify-center bg-gray-200 rounded-full">+</button>
+                    </div>
+                    <div id="faq-content-5" class="mt-2 text-gray-600 hidden">
+                        <p>AIToolBox支持多种类别的AI工具，包括但不限于：图像生成和编辑、文本和写作、视频创作和编辑、音频和音乐、聊天机器人、生产力工具、代码和开发、营销和SEO、教育工具、创意设计、商业和分析等。我们不断扩展分类，以涵盖AI领域的最新发展。</p>
+                    </div>
+                </div>
+                
+                <div class="border-b border-gray-200 pb-4">
+                    <div class="flex justify-between items-center cursor-pointer" onclick="toggleFAQ(6)">
+                        <h3 class="text-lg font-medium">"AI工具，工作开挂"是什么意思？</h3>
+                        <button id="faq-btn-6" class="w-6 h-6 flex items-center justify-center bg-gray-200 rounded-full">+</button>
+                    </div>
+                    <div id="faq-content-6" class="mt-2 text-gray-600 hidden">
+                        <p>这是我们的核心理念，意味着使用合适的AI工具可以极大地提高工作效率，就像在游戏中开挂一样。我们相信AI工具正在改变工作方式，让复杂任务变得简单，让创意工作更加高效。AIToolBox 工作导航就是为了帮助您找到这些能够"开挂"提升工作效率的AI工具。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div id="addCategoryModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal">
+        <div class="bg-white rounded-xl p-8 w-96 shadow-2xl">
+            <h3 class="text-2xl font-semibold mb-6">添加新分类</h3>
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">分类名称</label>
+                    <input type="text" id="newCategoryName" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">表情符号</label>
+                    <input type="text" id="newCategoryEmoji" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button onclick="closeModal('addCategoryModal')" class="px-6 py-3 text-gray-600 hover:text-gray-800">取消</button>
+                    <button onclick="handleAddCategory()" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Add Modal -->
+    <div id="bulkAddModal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal">
+        <div class="bg-white rounded-xl p-8 w-96 shadow-2xl">
+            <h3 class="text-2xl font-semibold mb-6">批量添加链接</h3>
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择分类</label>
+                    <select id="bulkAddCategory" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">链接列表（每行：名称,网址,描述）</label>
+                    <textarea id="bulkAddLinks" rows="6" class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button onclick="closeModal('bulkAddModal')" class="px-6 py-3 text-gray-600 hover:text-gray-800">取消</button>
+                    <button onclick="handleBulkAdd()" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors">添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="bg-white py-12 mt-16">
+      <div class="max-w-7xl mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div>
+            <h3 class="text-lg font-semibold mb-4">AIToolBox 工作导航</h3>
+            <p class="text-gray-600">你的AI工具箱，工作一键开挂</p>
+            <p class="text-gray-600 mt-2 italic">"AI工具，工作开挂"</p>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-4">功能</h3>
+            <ul class="space-y-2">
+              <li><a href="#" class="text-gray-600 hover:text-indigo-600">AI工具</a></li>
+              <li><a href="#" class="text-gray-600 hover:text-indigo-600">提交AI</a></li>
+              <li><a href="#" class="text-gray-600 hover:text-indigo-600">文章</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold mb-4">支持</h3>
+            <ul class="space-y-2">
+              <li><a href="#" class="text-gray-600 hover:text-indigo-600">隐私政策</a></li>
+              <li><a href="#" class="text-gray-600 hover:text-indigo-600">条款和条件</a></li>
+              <li><a href="#" class="text-gray-600 hover:text-indigo-600">联系我们</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="border-t border-gray-200 mt-8 pt-8 text-center text-gray-500">
+          <p>© 2024 AIToolBox 工作导航. 保留所有权利</p>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+        let currentUser = null;
+        let currentCategory = 'all';
+        const API_BASE_URL = '';
+        // 用于存储 AudioContext 实例
+        let audioContext = null;
+
+        // 模拟数据 - 在实际环境中应替换为API调用
+        const featuredTools = [
+            {
+                id: 1,
+                name: "ChatGPT",
+                description: "人工智能驱动的语言模型和聊天机器人",
+                url: "https://chat.openai.com",
+                icon_url: "https://chat.openai.com/favicon.ico",
+                visits: 39000000,
+                category: "chatbot"
+            },
+            {
+                id: 2,
+                name: "Midjourney",
+                description: "AI图像生成工具，创建高质量艺术作品",
+                url: "https://www.midjourney.com",
+                icon_url: "https://www.midjourney.com/favicon.ico",
+                visits: 3570000,
+                category: "image"
+            },
+            {
+                id: 3,
+                name: "Notion AI",
+                description: "集成了AI功能的笔记和知识管理工具",
+                url: "https://www.notion.so",
+                icon_url: "https://www.notion.so/favicon.ico",
+                visits: 1450000,
+                category: "productivity"
+            },
+            {
+                id: 4,
+                name: "Jasper",
+                description: "AI内容创作平台，帮助创建营销文案",
+                url: "https://www.jasper.ai",
+                icon_url: "https://www.jasper.ai/favicon.ico",
+                visits: 980000,
+                category: "writing"
+            },
+            {
+                id: 5,
+                name: "Runway",
+                description: "强大的视频编辑和生成AI工具",
+                url: "https://runwayml.com",
+                icon_url: "https://runwayml.com/favicon.ico",
+                visits: 750000,
+                category: "video"
+            },
+            {
+                id: 6,
+                name: "Zapier AI",
+                description: "自动化工作流程的AI助手",
+                url: "https://zapier.com",
+                icon_url: "https://zapier.com/favicon.ico",
+                visits: 650000,
+                category: "business"
+            }
+        ];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            
+            // 设置按钮事件
+            document.getElementById('addCategoryBtn').addEventListener('click', () => openModal('addCategoryModal'));
+            document.getElementById('bulkAddBtn').addEventListener('click', () => openModal('bulkAddModal'));
+
+            // 添加用户交互监听，以解决 AudioContext 问题
+            document.addEventListener('click', initAudioContext);
+            document.addEventListener('touchstart', initAudioContext);
+            document.addEventListener('keydown', initAudioContext);
+        });
+
+        // 初始化或恢复 AudioContext
+        function initAudioContext() {
+            // 如果已经初始化，则移除事件监听器
+            if (audioContext) {
+                document.removeEventListener('click', initAudioContext);
+                document.removeEventListener('touchstart', initAudioContext);
+                document.removeEventListener('keydown', initAudioContext);
+                return;
+            }
+
+            try {
+                // 创建新的 AudioContext 或恢复现有的
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                console.log('AudioContext 已初始化');
+                
+                // 移除事件监听器，因为我们已经初始化了 AudioContext
+                document.removeEventListener('click', initAudioContext);
+                document.removeEventListener('touchstart', initAudioContext);
+                document.removeEventListener('keydown', initAudioContext);
+            } catch (e) {
+                console.error('无法初始化 AudioContext:', e);
+            }
+        }
+
+        // 检查登录状态
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    currentUser = payload;
+                    updateUI();
+                } catch (err) {
+                    localStorage.removeItem('token');
+                    currentUser = null;
+                }
+            }
+            updateUI();
+        }
+
+        // 更新UI
+        function updateUI() {
+            const userInfo = document.getElementById('userInfo');
+            const loginForm = document.getElementById('loginForm');
+            const userEmail = document.getElementById('userEmail');
+            const addCategoryBtn = document.getElementById('addCategoryBtn');
+            const bulkAddBtn = document.getElementById('bulkAddBtn');
+            const editModeBtn = document.getElementById('editModeBtn');
+
+            if (currentUser) {
+                userInfo.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+                userEmail.textContent = currentUser.email;
+                
+                if (currentUser.isAdmin) {
+                    addCategoryBtn.classList.remove('hidden');
+                    bulkAddBtn.classList.remove('hidden');
+                    editModeBtn.classList.remove('hidden');
+                }
+            } else {
+                userInfo.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+                addCategoryBtn.classList.add('hidden');
+                bulkAddBtn.classList.add('hidden');
+                editModeBtn.classList.add('hidden');
+            }
+
+            // 加载精选工具
+            renderFeaturedTools();
+            
+            // 加载分类和链接
+            loadCategories();
+        }
+
+        // 渲染精选工具
+        function renderFeaturedTools() {
+            const container = document.getElementById('featuredTools');
+            
+            container.innerHTML = featuredTools
+                .filter(tool => currentCategory === 'all' || tool.category === currentCategory)
+                .map(tool => `
+                    <div class="tool-card bg-white overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center gap-3 mb-3">
+                                <img src="${tool.icon_url}" alt="${tool.name}" class="w-10 h-10 rounded-lg" 
+                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%23666666%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%222%22 d=%22M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2a2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2a2 2 0 104 0a2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064%22 /%3E%3C/svg%3E';">
+                                <h3 class="text-lg font-semibold">${tool.name}</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">${tool.description}</p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">${formatVisits(tool.visits)} 访问</span>
+                                <a href="${tool.url}" target="_blank" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">访问</a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        // 格式化访问量
+        function formatVisits(visits) {
+            if (visits >= 1000000) {
+                return (visits / 1000000).toFixed(1) + 'M';
+            } else if (visits >= 1000) {
+                return (visits / 1000).toFixed(1) + 'K';
+            }
+            return visits;
+        }
+
+        // 切换分类
+        function switchCategory(category) {
+            currentCategory = category;
+            
+            // 更新分类按钮状态
+            document.querySelectorAll('#categories button').forEach(btn => {
+                if (btn.dataset.category === category) {
+                    btn.classList.add('active', 'bg-indigo-600', 'text-white');
+                    btn.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                } else {
+                    btn.classList.remove('active', 'bg-indigo-600', 'text-white');
+                    btn.classList.add('bg-gray-200', 'hover:bg-gray-300');
+                }
+            });
+            
+            // 重新渲染工具
+            renderFeaturedTools();
+        }
+
+        // 加载分类
+        async function loadCategories() {
+            try {
+                // 在实际环境中，这应该是一个API调用
+                // const response = await fetch(`${API_BASE_URL}/api/categories`);
+                // const categories = await response.json();
+                
+                // 添加分类切换事件
+                document.querySelectorAll('#categories button').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        switchCategory(btn.dataset.category);
+                    });
+                });
+            } catch (err) {
+                console.error('加载分类失败:', err);
+            }
+        }
+
+        // 登录处理
+        async function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('请输入邮箱和密码');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('登录失败');
+                }
+                
+                const data = await response.json();
+                localStorage.setItem('token', data.token);
+                checkAuth();
+            } catch (err) {
+                alert('登录失败: ' + err.message);
+            }
+        }
+
+        // 登出处理
+        function handleLogout() {
+            localStorage.removeItem('token');
+            currentUser = null;
+            updateUI();
+        }
+
+        // 打开模态框
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        // 关闭模态框
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // 添加分类
+        function handleAddCategory() {
+            const name = document.getElementById('newCategoryName').value;
+            const emoji = document.getElementById('newCategoryEmoji').value;
+            
+            if (!name || !emoji) {
+                alert('请输入分类名称和表情符号');
+                return;
+            }
+            
+            // 调用API添加分类
+            // ...
+            
+            closeModal('addCategoryModal');
+        }
+
+        // 批量添加链接
+        function handleBulkAdd() {
+            const categoryId = document.getElementById('bulkAddCategory').value;
+            const linksText = document.getElementById('bulkAddLinks').value;
+            
+            if (!categoryId || !linksText) {
+                alert('请选择分类并输入链接');
+                return;
+            }
+            
+            // 解析链接文本
+            const links = linksText.split('\n').map(line => {
+                const [name, url, description] = line.split(',').map(s => s.trim());
+                return { name, url, description };
+            }).filter(link => link.name && link.url);
+            
+            if (links.length === 0) {
+                alert('没有有效的链接');
+                return;
+            }
+            
+            // 调用API添加链接
+            // ...
+            
+            closeModal('bulkAddModal');
+        }
+
+        // 搜索功能
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            
+            // 这里应该调用API进行搜索
+            // 但为了演示，我们只过滤featuredTools
+            if (searchTerm) {
+                const filteredTools = featuredTools.filter(tool => 
+                    tool.name.toLowerCase().includes(searchTerm) ||
+                    tool.description.toLowerCase().includes(searchTerm)
+                );
+                
+                document.getElementById('featuredTools').innerHTML = filteredTools.map(tool => `
+                    <div class="tool-card bg-white overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex items-center gap-3 mb-3">
+                                <img src="${tool.icon_url}" alt="${tool.name}" class="w-10 h-10 rounded-lg" 
+                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%23666666%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%222%22 d=%22M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2a2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2a2 2 0 104 0a2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064%22 /%3E%3C/svg%3E';">
+                                <h3 class="text-lg font-semibold">${tool.name}</h3>
+                            </div>
+                            <p class="text-gray-600 mb-4">${tool.description}</p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">${formatVisits(tool.visits)} 访问</span>
+                                <a href="${tool.url}" target="_blank" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">访问</a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                renderFeaturedTools();
+            }
+        });
+
+        // FAQ部分切换
+        function toggleFAQ(id) {
+            const content = document.getElementById(`faq-content-${id}`);
+            const button = document.getElementById(`faq-btn-${id}`);
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                button.innerHTML = '-';
+            } else {
+                content.classList.add('hidden');
+                button.innerHTML = '+';
+            }
+        }
+    </script>
+</body>
+</html> 
