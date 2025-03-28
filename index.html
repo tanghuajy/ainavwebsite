@@ -62,6 +62,7 @@
                     <span class="text-gray-600">欢迎, </span>
                     <span id="userEmail" class="font-medium"></span>
                     <button onclick="handleLogout()" class="ml-2 text-red-500 hover:text-red-700">退出</button>
+                    <button id="submitToolBtn" onclick="showSubmitToolModal()" class="ml-4 px-4 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">提交工具</button>
                 </div>
                 <div id="loginForm" class="flex justify-center gap-4">
                     <input type="email" id="email" placeholder="邮箱" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -381,8 +382,57 @@
       </div>
     </footer>
 
+    <!-- 提交工具模态框 -->
+    <div id="submitToolModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden fade-in">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4">提交新工具</h3>
+            <form id="submitToolForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">工具名称</label>
+                    <input type="text" id="toolName" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">网站链接</label>
+                    <input type="url" id="toolUrl" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">功能说明</label>
+                    <textarea id="toolDescription" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" required></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">分类</label>
+                    <select id="toolCategory" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <!-- 分类将动态加载 -->
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="hideSubmitToolModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 管理员审核模态框 -->
+    <div id="reviewSubmissionsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden fade-in">
+        <div class="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4">审核工具提交</h3>
+            <div id="submissionsList" class="space-y-4">
+                <!-- 提交内容将动态加载 -->
+            </div>
+            <div class="flex justify-end mt-6">
+                <button type="button" onclick="hideReviewModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">关闭</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // 全局变量定义
         let currentUser = null;
+        let isAdmin = false;
+        let loggedInUserId = null;
+        let categories = [];
+        let categoryMap = {};
         let currentCategory = 'all';
         const API_BASE_URL = '';
         // 用于存储 AudioContext 实例
@@ -448,11 +498,38 @@
 
         // 初始化
         document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM内容加载完成，开始初始化...");
+            
+            // 检查登录状态
             checkAuth();
+            
+            // 加载分类和链接
+            loadCategories();
             
             // 设置按钮事件
             document.getElementById('addCategoryBtn').addEventListener('click', () => openModal('addCategoryModal'));
             document.getElementById('bulkAddBtn').addEventListener('click', () => openModal('bulkAddModal'));
+
+            // 搜索功能
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                filterTools(searchTerm);
+            });
+
+            // 分类点击事件
+            document.querySelectorAll('.category-pill').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const category = this.getAttribute('data-category');
+                    setActiveCategory(category);
+                    filterToolsByCategory(category);
+                });
+            });
+            
+            // 提交工具表单事件
+            document.getElementById('submitToolForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                submitTool();
+            });
 
             // 添加用户交互监听，以解决 AudioContext 问题
             document.addEventListener('click', initAudioContext);
@@ -489,52 +566,124 @@
 
         // 检查登录状态
         function checkAuth() {
+            console.log("检查登录状态...");
             const token = localStorage.getItem('token');
+            console.log("找到token:", token ? "是" : "否");
+            
             if (token) {
                 try {
                     const payload = JSON.parse(atob(token.split('.')[1]));
+                    console.log("解析JWT成功:", payload);
                     currentUser = payload;
+                    // 特别注意isAdmin在JWT中可能是数字0或1，需要转换为布尔值
+                    isAdmin = payload.isAdmin === 1 || payload.isAdmin === true;
+                    loggedInUserId = payload.id;
+                    console.log("设置isAdmin为:", isAdmin, "原始值为:", payload.isAdmin);
                     updateUI();
                 } catch (err) {
+                    console.error("解析JWT失败:", err);
                     localStorage.removeItem('token');
                     currentUser = null;
+                    isAdmin = false;
+                    loggedInUserId = null;
+                    updateUI();
                 }
+            } else {
+                updateUI();
             }
-            updateUI();
         }
 
         // 更新UI
         function updateUI() {
+            console.log("更新UI开始执行...");
+            console.log("当前用户状态:", currentUser);
+            console.log("isAdmin值:", isAdmin);
+            
             const userInfo = document.getElementById('userInfo');
             const loginForm = document.getElementById('loginForm');
             const userEmail = document.getElementById('userEmail');
+            const submitToolBtn = document.getElementById('submitToolBtn');
+            
+            console.log("DOM元素检查:", {
+                userInfo: !!userInfo,
+                loginForm: !!loginForm,
+                userEmail: !!userEmail,
+                submitToolBtn: !!submitToolBtn
+            });
+            
             const addCategoryBtn = document.getElementById('addCategoryBtn');
             const bulkAddBtn = document.getElementById('bulkAddBtn');
             const editModeBtn = document.getElementById('editModeBtn');
-
+            
             if (currentUser) {
+                console.log("登录状态: 已登录用户", currentUser.email);
+                // 显示用户信息，隐藏登录表单
                 userInfo.classList.remove('hidden');
                 loginForm.classList.add('hidden');
                 userEmail.textContent = currentUser.email;
                 
+                // 确保普通用户可以看到提交按钮
+                if (submitToolBtn) {
+                    console.log("找到提交工具按钮，移除hidden类");
+                    submitToolBtn.classList.remove('hidden');
+                    submitToolBtn.style.display = 'inline-block';
+                    console.log("提交工具按钮可见性:", submitToolBtn.style.display);
+                    console.log("提交工具按钮类:", submitToolBtn.className);
+                } else {
+                    console.error("未找到提交工具按钮");
+                }
+                
                 if (currentUser.isAdmin) {
+                    console.log("显示管理员按钮");
                     addCategoryBtn.classList.remove('hidden');
                     bulkAddBtn.classList.remove('hidden');
                     editModeBtn.classList.remove('hidden');
+                    
+                    // 添加审核按钮（如果不存在）
+                    if (!document.getElementById('reviewSubmissionsBtn')) {
+                        console.log("添加审核按钮");
+                        const reviewBtn = document.createElement('button');
+                        reviewBtn.id = 'reviewSubmissionsBtn';
+                        reviewBtn.className = 'flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors shadow-md';
+                        reviewBtn.innerHTML = `
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            审核提交
+                        `;
+                        reviewBtn.onclick = showReviewModal;
+                        const toolbarBtnsContainer = document.querySelector('.flex.gap-3');
+                        if (toolbarBtnsContainer) {
+                            toolbarBtnsContainer.appendChild(reviewBtn);
+                            console.log("审核按钮已添加");
+                        }
+                    }
+                } else {
+                    console.log("普通用户界面");
+                    addCategoryBtn.classList.add('hidden');
+                    bulkAddBtn.classList.add('hidden');
+                    editModeBtn.classList.add('hidden');
                 }
             } else {
+                console.log("登录状态: 未登录");
                 userInfo.classList.add('hidden');
                 loginForm.classList.remove('hidden');
                 addCategoryBtn.classList.add('hidden');
                 bulkAddBtn.classList.add('hidden');
                 editModeBtn.classList.add('hidden');
+                
+                // 移除审核按钮
+                const reviewBtn = document.getElementById('reviewSubmissionsBtn');
+                if (reviewBtn) {
+                    reviewBtn.remove();
+                    console.log("审核按钮已移除");
+                }
             }
-
-            // 加载精选工具
-            renderFeaturedTools();
             
-            // 加载分类和链接
-            loadCategories();
+            // 刷新工具显示
+            renderFeaturedTools();
+            console.log("updateUI执行完成");
         }
 
         // 渲染精选工具
@@ -590,36 +739,84 @@
             renderFeaturedTools();
         }
 
-        // 加载分类
+        // 加载分类和链接
         async function loadCategories() {
+            console.log("开始加载分类和链接...");
             try {
-                // 在实际环境中，这应该是一个API调用
-                // const response = await fetch(`${API_BASE_URL}/api/categories`);
-                // const categories = await response.json();
+                console.log("发送获取分类请求...");
+                const response = await fetch('/api/categories');
+                console.log("获取分类响应状态:", response.status);
+                const data = await response.json();
+                console.log("获取到的分类数据:", data);
                 
-                // 添加分类切换事件
-                document.querySelectorAll('#categories button').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        switchCategory(btn.dataset.category);
-                    });
+                categories = data;
+                
+                // 创建分类映射，方便在其他地方使用
+                categoryMap = {};
+                categories.forEach(category => {
+                    categoryMap[category.id] = category.name;
                 });
-            } catch (err) {
-                console.error('加载分类失败:', err);
+                console.log("分类映射已创建:", categoryMap);
+                
+                // 初始化分类UI
+                initCategories();
+                
+                // 加载特色工具
+                loadFeaturedLinks();
+                
+                // 根据当前选中分类加载工具
+                filterToolsByCategory(currentCategory);
+                
+            } catch (error) {
+                console.error('加载分类出错:', error);
             }
         }
 
-        // 登录处理
+        // 初始化分类UI
+        function initCategories() {
+            console.log("初始化分类UI...");
+            const categoriesContainer = document.getElementById('categories');
+            if (!categoriesContainer) {
+                console.error("未找到分类容器");
+                return;
+            }
+            
+            categoriesContainer.innerHTML = `
+                <button
+                    data-category="all"
+                    class="category-pill active bg-indigo-600 text-white"
+                >
+                    全部
+                </button>
+            `;
+            
+            console.log("可用分类数量:", categories.length);
+            categories.forEach(category => {
+                console.log("添加分类:", category.name);
+                const button = document.createElement('button');
+                button.className = 'category-pill bg-gray-200 hover:bg-gray-300';
+                button.setAttribute('data-category', category.id);
+                button.textContent = category.name;
+                button.addEventListener('click', function() {
+                    setActiveCategory(category.id);
+                    filterToolsByCategory(category.id);
+                });
+                categoriesContainer.appendChild(button);
+            });
+            console.log("分类UI初始化完成");
+        }
+
+        // 处理登录
         async function handleLogin() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
-            if (!email || !password) {
-                alert('请输入邮箱和密码');
-                return;
-            }
+            console.log("开始登录:", email);
+            console.log("尝试登录:", {email, password});
+            console.log("API地址:", `${API_BASE_URL}/api/login`);
             
             try {
-                const response = await fetch(`${API_BASE_URL}/api/login`, {
+                const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -627,25 +824,66 @@
                     body: JSON.stringify({ email, password })
                 });
                 
-                if (!response.ok) {
-                    throw new Error('登录失败');
-                }
-                
+                console.log("服务器响应状态:", response.status);
                 const data = await response.json();
-                localStorage.setItem('token', data.token);
-                checkAuth();
-            } catch (err) {
-                alert('登录失败: ' + err.message);
+                console.log("服务器响应内容:", JSON.stringify(data));
+                
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    
+                    // 解析JWT获取用户信息
+                    const payload = parseJwt(data.token);
+                    console.log("解析的用户信息:", payload);
+                    
+                    // 特别注意isAdmin在JWT中可能是数字0或1，需要转换为布尔值
+                    currentUser = payload;
+                    isAdmin = payload.isAdmin === 1 || payload.isAdmin === true;
+                    loggedInUserId = payload.id;
+                    console.log("用户权限:", isAdmin ? "管理员" : "普通用户", "用户ID:", loggedInUserId);
+                    
+                    // 更新UI
+                    updateUI();
+                } else {
+                    alert(data.error || '登录失败');
+                }
+            } catch (error) {
+                console.error('登录出错:', error);
+                alert('登录出错，请重试');
             }
         }
-
-        // 登出处理
+        
+        // 处理登出
         function handleLogout() {
+            console.log("用户登出");
             localStorage.removeItem('token');
             currentUser = null;
+            isAdmin = false;
+            loggedInUserId = null;
             updateUI();
         }
-
+        
+        // 检查登录状态
+        function checkLoginStatus() {
+            // 该函数已被checkAuth替代，为避免冲突已被移除
+            console.log("checkLoginStatus函数已弃用，请使用checkAuth");
+            checkAuth();
+        }
+        
+        // 解析JWT
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (error) {
+                console.error('解析JWT出错:', error);
+                return {};
+            }
+        }
+        
         // 打开模态框
         function openModal(modalId) {
             document.getElementById(modalId).classList.remove('hidden');
@@ -723,7 +961,9 @@
                             <p class="text-gray-600 mb-4">${tool.description}</p>
                             <div class="flex items-center justify-between">
                                 <span class="text-sm text-gray-500">${formatVisits(tool.visits)} 访问</span>
-                                <a href="${tool.url}" target="_blank" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">访问</a>
+                                <a href="${tool.url}" target="_blank" 
+                                   onclick="recordVisit(${tool.id})"
+                                   class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">访问</a>
                             </div>
                         </div>
                     </div>
@@ -744,6 +984,420 @@
             } else {
                 content.classList.add('hidden');
                 button.innerHTML = '+';
+            }
+        }
+
+        // 显示提交工具模态框
+        function showSubmitToolModal() {
+            console.log("显示提交工具模态框");
+            loadCategoriesForSelect();
+            document.getElementById('submitToolModal').classList.remove('hidden');
+        }
+        
+        // 隐藏提交工具模态框
+        function hideSubmitToolModal() {
+            console.log("隐藏提交工具模态框");
+            document.getElementById('submitToolModal').classList.add('hidden');
+            document.getElementById('submitToolForm').reset();
+        }
+        
+        // 显示审核模态框
+        function showReviewModal() {
+            console.log("显示审核模态框");
+            loadSubmissions();
+            document.getElementById('reviewSubmissionsModal').classList.remove('hidden');
+        }
+        
+        // 隐藏审核模态框
+        function hideReviewModal() {
+            console.log("隐藏审核模态框");
+            document.getElementById('reviewSubmissionsModal').classList.add('hidden');
+        }
+        
+        // 加载分类到选择框
+        function loadCategoriesForSelect() {
+            console.log("加载分类到选择框");
+            const select = document.getElementById('toolCategory');
+            if (!select) {
+                console.error("未找到工具分类选择框");
+                return;
+            }
+            
+            select.innerHTML = '';
+            console.log("可用分类:", categories ? categories.length : 0);
+            
+            if (!categories || categories.length === 0) {
+                console.error("没有可用分类");
+                return;
+            }
+            
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                select.appendChild(option);
+            });
+            console.log("分类已加载到选择框");
+        }
+        
+        // 提交工具
+        async function submitTool() {
+            console.log("开始提交工具");
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('请先登录');
+                console.error("未找到token，不能提交");
+                return;
+            }
+            
+            const nameElem = document.getElementById('toolName');
+            const urlElem = document.getElementById('toolUrl');
+            const descriptionElem = document.getElementById('toolDescription');
+            const categoryElem = document.getElementById('toolCategory');
+            
+            if (!nameElem || !urlElem || !descriptionElem || !categoryElem) {
+                console.error("表单元素不存在");
+                return;
+            }
+            
+            const name = nameElem.value;
+            const url = urlElem.value;
+            const description = descriptionElem.value;
+            const category_id = categoryElem.value;
+            
+            console.log("提交数据:", { name, url, description, category_id });
+            
+            try {
+                console.log("发送提交请求...");
+                const response = await fetch('/api/submissions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name,
+                        url,
+                        description,
+                        category_id
+                    })
+                });
+                
+                console.log("提交响应状态:", response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("提交成功:", data);
+                    alert('提交成功！管理员审核后将会显示。');
+                    hideSubmitToolModal();
+                } else {
+                    const data = await response.json();
+                    console.error("提交失败:", data);
+                    alert(`提交失败: ${data.error || '未知错误'}`);
+                }
+            } catch (error) {
+                console.error('提交出错:', error);
+                alert('提交出错，请重试');
+            }
+        }
+        
+        // 加载待审核提交
+        async function loadSubmissions() {
+            console.log("加载待审核提交");
+            const token = localStorage.getItem('token');
+            if (!token || !isAdmin) {
+                alert('无权限访问');
+                console.error("无权限加载提交:", !token ? "缺少token" : "非管理员");
+                return;
+            }
+            
+            try {
+                console.log("发送获取提交请求...");
+                const response = await fetch('/api/submissions', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                console.log("获取提交响应状态:", response.status);
+                
+                if (response.ok) {
+                    const submissions = await response.json();
+                    console.log("获取到的提交:", submissions);
+                    displaySubmissions(submissions);
+                } else {
+                    console.error('加载提交失败:', response.statusText);
+                }
+            } catch (error) {
+                console.error('加载提交出错:', error);
+            }
+        }
+        
+        // 显示待审核提交
+        function displaySubmissions(submissions) {
+            console.log("显示待审核提交");
+            const container = document.getElementById('submissionsList');
+            if (!container) {
+                console.error("未找到提交列表容器");
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            if (!submissions || submissions.length === 0) {
+                console.log("无待审核提交");
+                container.innerHTML = '<p class="text-center text-gray-500">暂无待审核提交</p>';
+                return;
+            }
+            
+            console.log("显示", submissions.length, "个提交");
+            
+            submissions.forEach(submission => {
+                const elem = document.createElement('div');
+                elem.className = 'bg-gray-50 p-4 rounded-lg border border-gray-200';
+                elem.innerHTML = `
+                    <div class="flex justify-between">
+                        <h4 class="font-semibold">${submission.name}</h4>
+                        <span class="text-sm text-gray-500">提交时间: ${new Date(submission.created_at).toLocaleString()}</span>
+                    </div>
+                    <p class="my-2">${submission.description}</p>
+                    <p class="text-blue-600 mb-3">
+                        <a href="${submission.url}" target="_blank">${submission.url}</a>
+                    </p>
+                    <p class="text-sm text-gray-600 mb-3">分类: ${categoryMap[submission.category_id] || '未知'}</p>
+                    <div class="flex justify-end gap-2">
+                        <input type="text" id="comment-${submission.id}" placeholder="审核意见(可选)" class="px-3 py-1 border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <button onclick="reviewSubmission(${submission.id}, 'rejected')" class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">拒绝</button>
+                        <button onclick="reviewSubmission(${submission.id}, 'approved')" class="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">通过</button>
+                    </div>
+                `;
+                container.appendChild(elem);
+            });
+        }
+        
+        // 审核提交
+        async function reviewSubmission(id, status) {
+            console.log("审核提交:", id, status);
+            const token = localStorage.getItem('token');
+            if (!token || !isAdmin) {
+                alert('无权限操作');
+                console.error("无权限审核:", !token ? "缺少token" : "非管理员");
+                return;
+            }
+            
+            const commentElem = document.getElementById(`comment-${id}`);
+            if (!commentElem) {
+                console.error("未找到评论输入框");
+                return;
+            }
+            
+            const comment = commentElem.value;
+            console.log("审核意见:", comment);
+            
+            try {
+                console.log("发送审核请求...");
+                const response = await fetch(`/api/submissions/${id}/review`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        status,
+                        admin_comment: comment
+                    })
+                });
+                
+                console.log("审核响应状态:", response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log("审核成功:", data);
+                    alert(`审核${status === 'approved' ? '通过' : '拒绝'}成功`);
+                    loadSubmissions(); // 重新加载提交列表
+                } else {
+                    const data = await response.json();
+                    console.error("审核失败:", data);
+                    alert(`审核失败: ${data.error || '未知错误'}`);
+                }
+            } catch (error) {
+                console.error('审核出错:', error);
+                alert('审核出错，请重试');
+            }
+        }
+
+        // 设置活动分类
+        function setActiveCategory(categoryId) {
+            currentCategory = categoryId;
+            document.querySelectorAll('.category-pill').forEach(pill => {
+                if (pill.getAttribute('data-category') === categoryId) {
+                    pill.classList.add('active', 'bg-indigo-600', 'text-white');
+                    pill.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                } else {
+                    pill.classList.remove('active', 'bg-indigo-600', 'text-white');
+                    pill.classList.add('bg-gray-200', 'hover:bg-gray-300');
+                }
+            });
+        }
+        
+        // 根据分类过滤工具
+        function filterToolsByCategory(categoryId) {
+            const linksGrid = document.getElementById('linksGrid');
+            linksGrid.innerHTML = '';
+            
+            if (categoryId === 'all') {
+                // 显示所有分类及其链接
+                categories.forEach(category => {
+                    if (category.links && JSON.parse(category.links).length > 0) {
+                        displayCategory(category, linksGrid);
+                    }
+                });
+            } else {
+                // 显示选中的分类及其链接
+                const category = categories.find(c => c.id == categoryId);
+                if (category && category.links && JSON.parse(category.links).length > 0) {
+                    displayCategory(category, linksGrid);
+                } else {
+                    linksGrid.innerHTML = '<p class="text-center text-gray-500 mt-8">该分类下暂无工具</p>';
+                }
+            }
+        }
+        
+        // 根据搜索词过滤工具
+        function filterTools(searchTerm) {
+            if (!searchTerm) {
+                filterToolsByCategory(currentCategory);
+                return;
+            }
+            
+            const linksGrid = document.getElementById('linksGrid');
+            linksGrid.innerHTML = '';
+            
+            let foundAny = false;
+            
+            categories.forEach(category => {
+                const links = JSON.parse(category.links);
+                const filteredLinks = links.filter(link => 
+                    link.name.toLowerCase().includes(searchTerm) || 
+                    (link.description && link.description.toLowerCase().includes(searchTerm))
+                );
+                
+                if (filteredLinks.length > 0) {
+                    const categoryClone = {...category};
+                    categoryClone.links = JSON.stringify(filteredLinks);
+                    displayCategory(categoryClone, linksGrid);
+                    foundAny = true;
+                }
+            });
+            
+            if (!foundAny) {
+                linksGrid.innerHTML = '<p class="text-center text-gray-500 mt-8">未找到匹配的工具</p>';
+            }
+        }
+        
+        // 显示分类及其链接
+        function displayCategory(category, container) {
+            const categoryLinks = JSON.parse(category.links).filter(link => link !== null);
+            if (categoryLinks.length === 0) return;
+            
+            const categorySection = document.createElement('section');
+            categorySection.className = 'mb-10';
+            categorySection.innerHTML = `
+                <div class="flex items-center mb-4">
+                    <h2 class="text-2xl font-bold">${category.emoji || ''} ${category.name}</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 category-links">
+                </div>
+            `;
+            
+            const linksContainer = categorySection.querySelector('.category-links');
+            
+            categoryLinks.forEach(link => {
+                const linkCard = document.createElement('div');
+                linkCard.className = 'tool-card bg-white overflow-hidden';
+                linkCard.innerHTML = `
+                    <div class="p-6">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="${link.icon_url || '#'}" alt="${link.name}" class="w-10 h-10 rounded-lg" 
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%23666666%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%222%22 d=%22M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2a2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2a2 2 0 104 0a2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064%22 /%3E%3C/svg%3E';">
+                            <h3 class="text-lg font-semibold">${link.name}</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">${link.description || '暂无描述'}</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">${link.visits || 0} 访问</span>
+                            <a href="${link.url}" target="_blank" 
+                               onclick="recordVisit(${link.id})"
+                               class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">访问</a>
+                        </div>
+                    </div>
+                `;
+                
+                linksContainer.appendChild(linkCard);
+            });
+            
+            container.appendChild(categorySection);
+        }
+        
+        // 加载特色工具
+        function loadFeaturedLinks() {
+            const featuredContainer = document.getElementById('featuredTools');
+            featuredContainer.innerHTML = '';
+            
+            // 获取所有特色链接
+            const featuredLinks = [];
+            categories.forEach(category => {
+                const links = JSON.parse(category.links);
+                links.forEach(link => {
+                    if (link && link.is_featured) {
+                        link.category = category.name;
+                        featuredLinks.push(link);
+                    }
+                });
+            });
+            
+            // 随机排序特色链接
+            const shuffled = featuredLinks.sort(() => 0.5 - Math.random());
+            
+            // 显示最多6个特色链接
+            const featured = shuffled.slice(0, 6);
+            
+            if (featured.length === 0) {
+                featuredContainer.closest('section').classList.add('hidden');
+                return;
+            }
+            
+            featured.forEach(link => {
+                const linkCard = document.createElement('div');
+                linkCard.className = 'tool-card bg-white overflow-hidden';
+                linkCard.innerHTML = `
+                    <div class="p-6">
+                        <div class="flex items-center gap-3 mb-3">
+                            <img src="${link.icon_url || '#'}" alt="${link.name}" class="w-10 h-10 rounded-lg" 
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke=%22%23666666%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 stroke-width=%222%22 d=%22M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2a2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2a2 2 0 104 0a2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064%22 /%3E%3C/svg%3E';">
+                            <h3 class="text-lg font-semibold">${link.name}</h3>
+                        </div>
+                        <p class="text-gray-600 mb-4">${link.description || '暂无描述'}</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-500">${link.category}</span>
+                            <a href="${link.url}" target="_blank" 
+                               onclick="recordVisit(${link.id})"
+                               class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">访问</a>
+                        </div>
+                    </div>
+                `;
+                
+                featuredContainer.appendChild(linkCard);
+            });
+        }
+        
+        // 记录工具访问
+        async function recordVisit(linkId) {
+            try {
+                await fetch(`/api/links/${linkId}/visit`, {
+                    method: 'POST'
+                });
+            } catch (error) {
+                console.error('记录访问出错:', error);
             }
         }
     </script>
