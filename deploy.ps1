@@ -73,5 +73,5 @@ wrangler pages deploy src --project-name ainavwebsite
 
 Write-Host "Deployment completed!" -ForegroundColor $Green
 Write-Host "Please visit your Cloudflare Pages URL to view the site" -ForegroundColor $Green
-Write-Host "Admin account: admin@163.com" -ForegroundColor $Green
+Write-Host "Admin account:  admin@example.com" -ForegroundColor $Green
 Write-Host "Admin password: 123456" -ForegroundColor $Green 

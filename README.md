@@ -18,7 +18,48 @@
 - 数据库：Cloudflare D1
 - 认证：JWT
 
-## 部署步骤
+## 部署说明
+
+### 快速部署
+
+使用Windows系统可以直接运行以下命令进行部署：
+```bash
+npm run deploy:windows
+```
+
+这个命令会按顺序执行以下部署脚本：
+
+1. `deploy-step1.ps1`：第一步部署
+   - 检查并安装 wrangler
+   - 检查 Cloudflare 登录状态
+   - 创建 D1 数据库
+   - 更新 wrangler.toml 配置
+   - 保存数据库 ID 到文件
+
+2. `deploy-step2.ps1`：第二步部署
+   - 读取数据库 ID
+   - 初始化数据库（执行 schema.sql）
+   - 生成 JWT 密钥
+   - 设置环境变量
+   - 部署 Worker
+   - 更新前端 API URL
+   - 部署前端到 Pages
+
+3. `deploy-frontend.ps1`：前端部署（可选）
+   - 检查并安装 wrangler
+   - 检查 Cloudflare 登录状态
+   - 检查/设置 JWT_SECRET
+   - 部署前端到 Pages
+   - 部署 Functions
+
+部署完成后，您将获得：
+- Cloudflare Pages URL（您的网站地址）
+- 管理员账号：admin@example.com
+- 管理员密码：123456
+
+### 手动部署步骤
+
+如果您想手动控制部署过程，可以按以下步骤操作：
 
 1. 安装依赖：
 ```bash
@@ -45,12 +86,13 @@ wrangler d1 execute bookmark_db --file=./schema.sql
 
 5. 部署Worker：
 ```bash
-npm run deploy
+wrangler deploy
 ```
 
 6. 部署前端：
-- 将`src/index.html`部署到Cloudflare Pages
-- 更新`index.html`中的`API_BASE_URL`为你的Worker URL
+```bash
+wrangler pages deploy src --project-name ainavwebsite
+```
 
 ## 开发
 
@@ -63,11 +105,35 @@ npm run dev
 
 默认管理员账号：
 - 邮箱：admin@example.com
-- 密码：admin123
+- 密码：123456
 
 ## 注意事项
 
-- 请在生产环境中修改默认管理员密码
+- 请在部署完成后立即修改默认管理员密码
+- 确保您的Cloudflare账号已经登录
 - 建议使用HTTPS进行安全传输
 - 定期备份数据库
 - 监控Worker的使用情况
+
+## 常见问题
+
+1. 部署失败：
+   - 确保已安装最新版本的 wrangler
+   - 检查 Cloudflare 登录状态
+   - 检查数据库 ID 是否正确
+
+2. 访问出错：
+   - 确认 Worker URL 配置正确
+   - 检查 JWT_SECRET 是否已设置
+   - 验证数据库连接是否正常
+
+3. 中文显示乱码：
+   - 确保所有文件使用 UTF-8 编码
+   - 检查 Content-Type 头部设置
+
+## 技术支持
+
+如果您在部署过程中遇到问题，请：
+1. 检查控制台错误信息
+2. 查看 Cloudflare 仪表板中的日志
+3. 提交 Issue 获取帮助

@@ -67,4 +67,19 @@ CREATE TABLE visit_logs (
     user_agent TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (link_id) REFERENCES links(id)
+);
+
+-- 创建提交申请表
+DROP TABLE IF EXISTS submissions;
+CREATE TABLE submissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    description TEXT,
+    status TEXT DEFAULT 'pending', -- pending, approved, rejected
+    admin_comment TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 ); 

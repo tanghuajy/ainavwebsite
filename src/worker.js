@@ -188,6 +188,65 @@ router.post('/api/login', async (request, env) => {
   return Response.json({ token });
 });
 
+// 路由：提交新工具申请
+router.post('/api/submissions', async (request, env) => {
+  const user = await authMiddleware(request, env);
+  if (!user) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  const { name, url, description } = await request.json();
+  const result = await env.DB.prepare(`
+    INSERT INTO submissions (user_id, name, url, description)
+    VALUES (?, ?, ?, ?)
+  `).bind(user.id, name, url, description).run();
+
+  return Response.json({ id: result.meta.last_row_id });
+});
+
+// 路由：获取所有申请（管理员）
+router.get('/api/submissions', async (request, env) => {
+  const adminCheck = await adminMiddleware(request, env);
+  if (adminCheck) return adminCheck;
+
+  const submissions = await env.DB.prepare(`
+    SELECT s.*, u.email as user_email
+    FROM submissions s
+    JOIN users u ON s.user_id = u.id
+    ORDER BY s.created_at DESC
+  `).all();
+
+  return Response.json(submissions.results);
+});
+
+// 路由：审核申请
+router.put('/api/submissions/:id', async (request, env) => {
+  const adminCheck = await adminMiddleware(request, env);
+  if (adminCheck) return adminCheck;
+
+  const { id } = request.params;
+  const { status, admin_comment } = await request.json();
+  
+  await env.DB.prepare(`
+    UPDATE submissions
+    SET status = ?, admin_comment = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).bind(status, admin_comment, id).run();
+
+  // 如果审核通过，自动添加到链接列表
+  if (status === 'approved') {
+    const submission = await env.DB.prepare('SELECT * FROM submissions WHERE id = ?').bind(id).first();
+    const icon_url = await getFavicon(submission.url);
+    
+    await env.DB.prepare(`
+      INSERT INTO links (name, url, description, icon_url)
+      VALUES (?, ?, ?, ?)
+    `).bind(submission.name, submission.url, submission.description, icon_url).run();
+  }
+
+  return Response.json({ success: true });
+});
+
 // 获取网站图标
 async function getFavicon(url) {
   try {
@@ -238,6 +297,7 @@ async function handleRequest(request) {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Content-Type': 'application/json; charset=utf-8'
       },
     });
   }
@@ -246,11 +306,17 @@ async function handleRequest(request) {
   const response = await router.handle(request);
   if (response) {
     response.headers.set('Access-Control-Allow-Origin', '*');
+    response.headers.set('Content-Type', 'application/json; charset=utf-8');
     return response;
   }
 
   // 处理静态文件
-  return new Response('Not Found', { status: 404 });
+  return new Response('Not Found', { 
+    status: 404,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8'
+    }
+  });
 }
 
 // 处理定时任务

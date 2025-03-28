@@ -2,8 +2,9 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIToolBox 工作导航 - 你的AI工具箱，工作一键开�?/title>
+    <title>AIToolBox - 你的AI工具箱，工作一键开挂</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         .gradient-text {
@@ -55,18 +56,20 @@
     <div class="max-w-7xl mx-auto px-4 py-8">
         <!-- Header -->
         <header class="text-center mb-12">
-            <h1 class="text-5xl font-bold text-gray-900 mb-4 gradient-text">AIToolBox 工作导航</h1>
-            <p class="text-xl text-gray-600">你的AI工具箱，工作一键开�?/p>
+            <h1 class="text-5xl font-bold text-gray-900 mb-4 gradient-text">AIToolBox</h1>
+            <p class="text-xl text-gray-600">你的AI工具箱，工作一键开挂</p>
             <div class="mt-4">
-                <div id="userInfo" class="hidden">
+                <div id="userInfo" class="hidden flex items-center">
                     <span class="text-gray-600">欢迎, </span>
                     <span id="userEmail" class="font-medium"></span>
-                    <button onclick="handleLogout()" class="ml-2 text-red-500 hover:text-red-700">退�?/button>
+                    <button onclick="showSubmissionModal()" class="ml-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">提交新工具</button>
+                    <button onclick="handleLogout()" class="ml-2 text-red-500 hover:text-red-700">退出</button>
                 </div>
                 <div id="loginForm" class="flex justify-center gap-4">
                     <input type="email" id="email" placeholder="邮箱" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <input type="password" id="password" placeholder="密码" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <button onclick="handleLogin()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">登录</button>
+                    <button onclick="handleRegister()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">注册</button>
                 </div>
             </div>
         </header>
@@ -148,13 +151,13 @@
                     data-category="productivity"
                     class="category-pill bg-gray-200 hover:bg-gray-300"
                 >
-                    生产�?
+                    生产力
                 </button>
                 <button
                     data-category="writing"
                     class="category-pill bg-gray-200 hover:bg-gray-300"
                 >
-                    文本和写�?
+                    文本和写作
                 </button>
                 <button
                     data-category="business"
@@ -166,14 +169,14 @@
                     data-category="chatbot"
                     class="category-pill bg-gray-200 hover:bg-gray-300"
                 >
-                    聊天机器�?
+                    聊天机器人
                 </button>
             </div>
         </div>
 
         <!-- Featured AI Tools Section -->
         <section class="mb-16">
-            <h2 class="text-2xl font-bold mb-6">AIToolBox 精选工�?/h2>
+            <h2 class="text-2xl font-bold mb-6">AIToolBox 精选工具</h2>
             <div id="featuredTools" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Tools will be loaded dynamically -->
             </div>
@@ -182,9 +185,9 @@
         <!-- Links Grid -->
         <div id="linksGrid" class="grid gap-8"></div>
 
-        <!-- 最�?AI 工具部分 -->
+        <!-- 最新AI 工具部分 -->
         <section class="mb-16">
-            <h2 class="text-2xl font-bold mb-6">AIToolBox 最新工�?/h2>
+            <h2 class="text-2xl font-bold mb-6">AIToolBox 最新工具</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div class="tool-card bg-white overflow-hidden">
                     <div class="p-6">
@@ -241,16 +244,16 @@
         
         <!-- FAQ 部分 -->
         <section class="mb-16 bg-white rounded-xl p-8 shadow-md">
-            <h2 class="text-2xl font-bold mb-6">关于 AIToolBox 工作导航的常见问�?/h2>
+            <h2 class="text-2xl font-bold mb-6">关于 AIToolBox 的常见问题/h2>
             
             <div class="space-y-4">
                 <div class="border-b border-gray-200 pb-4">
                     <div class="flex justify-between items-center cursor-pointer" onclick="toggleFAQ(1)">
-                        <h3 class="text-lg font-medium">什么是AIToolBox 工作导航�?/h3>
+                        <h3 class="text-lg font-medium">什么是AIToolBox？/h3>
                         <button id="faq-btn-1" class="w-6 h-6 flex items-center justify-center bg-gray-200 rounded-full">+</button>
                     </div>
                     <div id="faq-content-1" class="mt-2 text-gray-600 hidden">
-                        <p>AIToolBox 工作导航是一个精心策划的AI工具目录，旨在帮助用户发现和探索最新、最实用的人工智能工具。我们的平台汇集了各种类别的AI工具，包括图像生成、文本写作、视频创作、聊天机器人等多个领域�?/p>
+                        <p>AIToolBox 是一个精心策划的AI工具目录，旨在帮助用户发现和探索最新、最实用的人工智能工具。我们的平台汇集了各种类别的AI工具，包括图像生成、文本写作、视频创作、聊天机器人等多个领域�?/p>
                     </div>
                 </div>
                 
@@ -300,7 +303,7 @@
                         <button id="faq-btn-6" class="w-6 h-6 flex items-center justify-center bg-gray-200 rounded-full">+</button>
                     </div>
                     <div id="faq-content-6" class="mt-2 text-gray-600 hidden">
-                        <p>这是我们的核心理念，意味着使用合适的AI工具可以极大地提高工作效率，就像在游戏中开挂一样。我们相信AI工具正在改变工作方式，让复杂任务变得简单，让创意工作更加高效。AIToolBox 工作导航就是为了帮助您找到这些能�?开�?提升工作效率的AI工具�?/p>
+                        <p>这是我们的核心理念，意味着使用合适的AI工具可以极大地提高工作效率，就像在游戏中开挂一样。我们相信AI工具正在改变工作方式，让复杂任务变得简单，让创意工作更加高效。AIToolBox 就是为了帮助您找到这些能�?开�?提升工作效率的AI工具�?/p>
                     </div>
                 </div>
             </div>
@@ -349,12 +352,45 @@
         </div>
     </div>
 
+    <!-- 提交工具模态框 -->
+    <div id="submissionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-lg w-full mx-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">提交新工具</h2>
+                <button onclick="hideSubmissionModal()" class="text-gray-500 hover:text-gray-700">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="submissionForm" onsubmit="handleSubmission(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">工具名称</label>
+                    <input type="text" id="toolName" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">网址</label>
+                    <input type="url" id="toolUrl" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">说明</label>
+                    <textarea id="toolDescription" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"></textarea>
+                </div>
+                <div class="flex justify-end gap-4 mt-6">
+                    <button type="button" onclick="hideSubmissionModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">取消</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">提交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Footer Section -->
     <footer class="bg-white py-12 mt-16">
       <div class="max-w-7xl mx-auto px-4">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 class="text-lg font-semibold mb-4">AIToolBox 工作导航</h3>
+            <h3 class="text-lg font-semibold mb-4">AIToolBox </h3>
             <p class="text-gray-600">你的AI工具箱，工作一键开�?/p>
             <p class="text-gray-600 mt-2 italic">"AI工具，工作开�?</p>
           </div>
@@ -376,7 +412,7 @@
           </div>
         </div>
         <div class="border-t border-gray-200 mt-8 pt-8 text-center text-gray-500">
-          <p>© 2025 AIToolBox 工作导航. 保留所有权�?/p>
+          <p>© 2025 AIToolBox . 保留所有权�?/p>
         </div>
       </div>
     </footer>
@@ -493,14 +529,21 @@
             if (token) {
                 try {
                     const payload = JSON.parse(atob(token.split('.')[1]));
-                    currentUser = payload;
+                    currentUser = {
+                        id: payload.id,
+                        email: payload.email,
+                        isAdmin: payload.isAdmin
+                    };
                     updateUI();
                 } catch (err) {
                     localStorage.removeItem('token');
                     currentUser = null;
+                    updateUI();
                 }
+            } else {
+                currentUser = null;
+                updateUI();
             }
-            updateUI();
         }
 
         // 更新UI
@@ -513,16 +556,24 @@
             const editModeBtn = document.getElementById('editModeBtn');
 
             if (currentUser) {
+                // 登录用户可以看到用户信息和提交按钮
+                userInfo.style.display = 'block';  // 使用style.display而不是classList
                 userInfo.classList.remove('hidden');
                 loginForm.classList.add('hidden');
                 userEmail.textContent = currentUser.email;
                 
+                // 管理员功能
                 if (currentUser.isAdmin) {
                     addCategoryBtn.classList.remove('hidden');
                     bulkAddBtn.classList.remove('hidden');
                     editModeBtn.classList.remove('hidden');
+                } else {
+                    addCategoryBtn.classList.add('hidden');
+                    bulkAddBtn.classList.add('hidden');
+                    editModeBtn.classList.add('hidden');
                 }
             } else {
+                userInfo.style.display = 'none';  // 使用style.display而不是classList
                 userInfo.classList.add('hidden');
                 loginForm.classList.remove('hidden');
                 addCategoryBtn.classList.add('hidden');
@@ -530,14 +581,14 @@
                 editModeBtn.classList.add('hidden');
             }
 
-            // 加载精选工�?
+            // 加载精选工具
             renderFeaturedTools();
             
-            // 加载分类和链�?
+            // 加载分类和链接
             loadCategories();
         }
 
-        // 渲染精选工�?
+        // 渲染精选工具
         function renderFeaturedTools() {
             const container = document.getElementById('featuredTools');
             
@@ -633,7 +684,26 @@
                 
                 const data = await response.json();
                 localStorage.setItem('token', data.token);
-                checkAuth();
+                
+                // 解析token获取用户信息
+                const payload = JSON.parse(atob(data.token.split('.')[1]));
+                currentUser = {
+                    id: payload.id,
+                    email: payload.email,
+                    isAdmin: payload.isAdmin
+                };
+                
+                // 立即更新UI显示
+                updateUI();
+                
+                // 确保userInfo显示
+                const userInfo = document.getElementById('userInfo');
+                userInfo.style.display = 'block';
+                userInfo.classList.remove('hidden');
+                
+                // 清空登录表单
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
             } catch (err) {
                 alert('登录失败: ' + err.message);
             }
@@ -678,7 +748,7 @@
             const linksText = document.getElementById('bulkAddLinks').value;
             
             if (!categoryId || !linksText) {
-                alert('请选择分类并输入链�?);
+                alert('请选择分类并输入链接');
                 return;
             }
             
@@ -689,7 +759,7 @@
             }).filter(link => link.name && link.url);
             
             if (links.length === 0) {
-                alert('没有有效的链�?);
+                alert('没有有效的链接');
                 return;
             }
             
@@ -744,6 +814,79 @@
             } else {
                 content.classList.add('hidden');
                 button.innerHTML = '+';
+            }
+        }
+
+        // 显示提交工具模态框
+        function showSubmissionModal() {
+            document.getElementById('submissionModal').classList.remove('hidden');
+        }
+
+        // 隐藏提交工具模态框
+        function hideSubmissionModal() {
+            document.getElementById('submissionModal').classList.add('hidden');
+            document.getElementById('submissionForm').reset();
+        }
+
+        // 处理工具提交
+        async function handleSubmission(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('toolName').value;
+            const url = document.getElementById('toolUrl').value;
+            const description = document.getElementById('toolDescription').value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/submissions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ name, url, description })
+                });
+
+                if (response.ok) {
+                    alert('提交成功！请等待管理员审核。');
+                    hideSubmissionModal();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || '提交失败，请稍后重试');
+                }
+            } catch (error) {
+                console.error('提交失败:', error);
+                alert('提交失败，请稍后重试');
+            }
+        }
+
+        // 处理注册
+        async function handleRegister() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                alert('请输入邮箱和密码');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('注册失败');
+                }
+                
+                alert('注册成功，请登录');
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+            } catch (err) {
+                alert('注册失败: ' + err.message);
             }
         }
     </script>
